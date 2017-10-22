@@ -4,31 +4,43 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-OneWire oneWire(DS18B20);
-DallasTemperature sensors(&oneWire);
-DeviceAddress tempDeviceAddress;
-
-void intTemp()
+class DS18B20
 {
-  sensors.begin();
-  sensors.getAddress(tempDeviceAddress, 0);
-  sensors.setResolution(tempDeviceAddress, 12);
-  sensors.setWaitForConversion(false);
-  sensors.requestTemperatures();
-}
+  private:
+    OneWire *oneWire;
+    DallasTemperature *sensors;
+    DeviceAddress tempDeviceAddress;
+	float temperature;
+	unsigned long lastTempRequest;
+  public:
+    float getTemp();
+    DS18B20(byte PIN)
+    {
+      oneWire = new OneWire(PIN);
+      sensors = new DallasTemperature(oneWire);
+	  temperature = -127.0;
+	  lastTempRequest = 0;
+    }
+};
 
-float getTemp()
+float DS18B20::getTemp()
 {
-static unsigned long lastTempRequest = 0;
-static float temperature = -127.0;
-if (lastTempRequest == 0) lastTempRequest = millis(); 
-if (millis() - lastTempRequest >= 750) // waited long enough??
+  if (lastTempRequest == 0) 
+  {	  
+	sensors->begin();
+	sensors->getAddress(tempDeviceAddress, 0);
+	sensors->setResolution(tempDeviceAddress, 12);
+	sensors->setWaitForConversion(false);
+	sensors->requestTemperatures();
+	lastTempRequest = millis();
+  } 
+  if (millis() - lastTempRequest >= 750)
   {
-    temperature = sensors.getTempCByIndex(0);
-    sensors.requestTemperatures(); 
-    lastTempRequest = millis(); 
+    temperature = sensors->getTempCByIndex(0);
+    sensors->requestTemperatures();
+    lastTempRequest = millis();
   }
   return temperature;
 }
 
-#endif 
+#endif
