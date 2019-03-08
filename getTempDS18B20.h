@@ -12,6 +12,7 @@ class DS18B20
     DeviceAddress tempDeviceAddress;
 	float temperature;
 	unsigned long lastTempRequest;
+	byte reset;
   public:
     float getTemp();
     DS18B20(byte PIN)
@@ -20,8 +21,16 @@ class DS18B20
       sensors = new DallasTemperature(oneWire);
 	  temperature = -127.0;
 	  lastTempRequest = 0;
+	  reset = 0;
     }
+	void resetData(byte _reset)
+	{
+		reset = _reset;
+		temperature = -127.0;
+	}
 };
+
+
 
 float DS18B20::getTemp()
 {
@@ -36,8 +45,13 @@ float DS18B20::getTemp()
   } 
   if (millis() - lastTempRequest >= 750)
   {
-    temperature = sensors->getTempCByIndex(0);
-    sensors->requestTemperatures();
+    if (!reset) temperature = sensors->getTempCByIndex(0);
+	else 
+	{
+		sensors->getTempCByIndex(0);
+		--reset;
+    }
+	sensors->requestTemperatures();
     lastTempRequest = millis();
   }
   return temperature;
